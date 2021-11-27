@@ -50,9 +50,13 @@ void* begin(void* arg){
           int res1 = sem_trywait(&sb_lock[sb1]);
           if(res1 == 0){
             printf("student %d got sb %d\n", id, sb1);
-            sleep(9);
+            sleep(4);
+            sleep(3);
+            sleep(2);
             sem_post(&sb_lock[sb1]);
-            sleep(9);
+            sleep(5);
+            sleep(3);
+            sleep(1);
             sem_post(&tap_lock[i]);
             exit_flag = 1;
             break;
@@ -70,9 +74,13 @@ void* begin(void* arg){
           int res2 = sem_trywait(&sb_lock[sb2]);
           if(res2 == 0){
             printf("student %d got sb %d\n", id, sb2);
-            sleep(9);
+            sleep(4);
+            sleep(3);
+            sleep(2);
             sem_post(&sb_lock[sb2]);
-            sleep(9);
+            sleep(5);
+            sleep(3);
+            sleep(1);
             sem_post(&tap_lock[i]);
             exit_flag = 1;
             break;
