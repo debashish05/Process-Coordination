@@ -29,6 +29,8 @@ struct thread_info {
   int end;
 };
 
+int segment_id;
+
 /*
  * Function to generate a random number.
  * Takes arguments A abd B and returns an integer at random
@@ -52,7 +54,7 @@ int comp(string a, string b){
   }
 }
 
-void merge_sort(struct thread_info* info){
+void merge_sort(struct thread_info* info, int start, int end){
 
   // printf("inside before: \n");
   // for(int i=0;i<MAX_SIZE;++i){
@@ -60,8 +62,8 @@ void merge_sort(struct thread_info* info){
   // }
   // printf("\n");
 
-  int start = info->start;
-  int end = info->end;
+  // int start = info->start;
+  // int end = info->end;
   // Check array size
   if(end - start <= 5){
     // Perform selection sort on array
@@ -89,29 +91,42 @@ void merge_sort(struct thread_info* info){
   }else{
     int mid = (start+end)/2;
 
-    int segment_id1 = shmget(IPC_PRIVATE, sizeof(struct thread_info), IPC_CREAT | 0666);
-    struct thread_info* left_half = (struct thread_info*)shmat(segment_id1, NULL, 0);
-    for(int i=0;i<MAX_SIZE;++i){
-      left_half->arr[i] = info->arr[i];
-    }
-    left_half->start = start;
-    left_half->end = mid;
+    // int segment_id1 = shmget(IPC_PRIVATE, sizeof(struct thread_info), IPC_CREAT | 0666);
+    // printf("left: %d\n", segment_id1);
+    // if(segment_id1 == -1){
+    //   printf("Out of memory\n");
+    //   exit(1);
+    // }
 
-    int segment_id2 = shmget(IPC_PRIVATE, sizeof(struct thread_info), IPC_CREAT | 0666);
-    struct thread_info* right_half = (struct thread_info*)shmat(segment_id2, NULL, 0);
-    for(int i=0;i<MAX_SIZE;++i){
-      right_half->arr[i] = info->arr[i];
-    }
-    right_half->start = mid;
-    right_half->end = end;
+    // struct thread_info* left_half = (struct thread_info*)shmat(segment_id, NULL, 0);
+    // for(int i=0;i<MAX_SIZE;++i){
+    //   left_half->arr[i] = info->arr[i];
+    // }
+    // left_half->start = start;
+    // left_half->end = mid;
+
+    // int segment_id2 = shmget(IPC_PRIVATE, sizeof(struct thread_info), IPC_CREAT | 0666);
+    // printf("right: %d\n", segment_id2);
+    // if(segment_id2 == -1){
+    //   printf("Out of memory\n");
+    //   exit(1);
+    // }
+
+    // struct thread_info* right_half = (struct thread_info*)shmat(segment_id, NULL, 0);
+    // for(int i=0;i<MAX_SIZE;++i){
+    //   right_half->arr[i] = info->arr[i];
+    // }
+    // right_half->start = mid;
+    // right_half->end = end;
 
     pid_t left_process_id = fork();
     if(left_process_id == 0){
-      struct thread_info* l_h = (struct thread_info*)shmat(segment_id1, NULL, 0);
-      merge_sort(l_h);
-      for(int i=0;i<MAX_SIZE;++i){
-        left_half->arr[i] = l_h->arr[i];
-      }
+      struct thread_info* l_h = (struct thread_info*)shmat(segment_id, NULL, 0);
+      // cout<<"start: "<<start<<"mid: "<<mid<<endl;
+      merge_sort(l_h, start, mid);
+      // for(int i=0;i<MAX_SIZE;++i){
+      //   left_half->arr[i] = l_h->arr[i];
+      // }
       shmdt(l_h);
       // printf("left inside: \n");
       // for(int i=0;i<MAX_SIZE;++i){
@@ -124,11 +139,12 @@ void merge_sort(struct thread_info* info){
     }
     pid_t right_process_id = fork();
     if(right_process_id == 0){
-      struct thread_info* r_h = (struct thread_info*)shmat(segment_id2, NULL, 0);
-      merge_sort(r_h);
-      for(int i=0;i<MAX_SIZE;++i){
-        right_half->arr[i] = r_h->arr[i];
-      }
+      struct thread_info* r_h = (struct thread_info*)shmat(segment_id, NULL, 0);
+      // cout<<"end: "<<end<<"mid: "<<mid<<endl;
+      merge_sort(r_h, mid, end);
+      // for(int i=0;i<MAX_SIZE;++i){
+      //   right_half->arr[i] = r_h->arr[i];
+      // }
       shmdt(r_h);
       // printf("right inside: \n");
       // for(int i=0;i<MAX_SIZE;++i){
@@ -168,6 +184,20 @@ void merge_sort(struct thread_info* info){
     // vector<string> left_half = merge_sort(arr, start, mid);
     // vector<string> right_half = merge_sort(arr, mid, end);
 
+    struct thread_info* left_half = new thread_info;
+    for(int i=0;i<MAX_SIZE;++i){
+      left_half->arr[i] = info->arr[i];
+    }
+    left_half->start = start;
+    left_half->end = mid;
+
+    struct thread_info* right_half = new thread_info;
+    for(int i=0;i<MAX_SIZE;++i){
+      right_half->arr[i] = info->arr[i];
+    }
+    right_half->start = mid;
+    right_half->end = end;
+
     int left_counter = start;
     int right_counter = mid;
     int counter = start;
@@ -196,8 +226,8 @@ void merge_sort(struct thread_info* info){
       ++right_counter;
     }
 
-    shmdt(left_half);
-    shmdt(right_half);
+    // shmdt(left_half);
+    // shmdt(right_half);
 
     // printf("After merge: \n");
     // for(int i=0;i<MAX_SIZE;++i){
@@ -223,7 +253,12 @@ int main(){
 
     // printf("herherere\n");
 
-    int segment_id = shmget(IPC_PRIVATE, sizeof(struct thread_info), IPC_CREAT | 0666);
+    segment_id = shmget(IPC_PRIVATE, sizeof(struct thread_info), IPC_CREAT | 0666);
+    // printf("first: %d\n", segment_id);
+    // if(segment_id == -1){
+    //   printf("out of memory\n");
+    //   exit(1);
+    // }
     struct thread_info* info = (struct thread_info*)shmat(segment_id, NULL, 0);
     // printf("here1\n");
     for(int i=0;i<MAX_SIZE;++i){
@@ -241,10 +276,16 @@ int main(){
 
     // printf("before\n");
     clock_t begin = clock();
-    merge_sort(info);
+    merge_sort(info, 0, MAX_SIZE);
     clock_t end = clock();
     readings[i] = (double)(end - begin) / CLOCKS_PER_SEC;
+    // printf("after sort: \n");
+    // for(int i=0;i<MAX_SIZE;++i){
+    //   printf("%d ", info->arr[i]);
+    // }
+    // printf("\n");
     shmdt(info);
+    // break;
   }
 
   double average = 0;
