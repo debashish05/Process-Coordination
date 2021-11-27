@@ -57,6 +57,12 @@ Problem A in approach 2 still remains an issue.
 
 * Main logic followed by each editor is present inside `begin` function
 
+## Q2
+
+### Running code
+
+* Run `gcc dish_washing.c -o dish_washing.out -pthread`
+
 ## Q3
 
 ### Running code
